@@ -12,9 +12,7 @@
     <script src="{% static 'mutint_recurrent/recurrent_plot.js' %}?v={{ asset_version }}"></script>
     <script src="{% static 'mutint_recurrent/recurrent.js' %}?v={{ asset_version }}"></script>
 {% endblock %}
-{% block header %}
-    <b><a href="/project/{{ project_id }}">{{ project_name }}</a>: {{ experiment_name }}</b> - Recurrent
-{% endblock %}
+{% block header %}{% include "experiment_header.html" with page="Recurrent" %}{% endblock %}
 {% block content %}
 {% include "recurrent/_glyphs.html" %}
 <div class="mutint-recurrent" data-recurrent

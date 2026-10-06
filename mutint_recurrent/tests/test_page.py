@@ -24,7 +24,7 @@ class PageTestCase(fx.RecurrentFixture):
         response = self.get()
         self.assertEqual(200, response.status_code)
         html = response.content.decode()
-        self.assertIn("P</a>: E</b> - Recurrent", html)
+        self.assertIn('class="mutint-experiment-name">E</span></b> &mdash; Recurrent', html)
         self.assertIn("promoter region (150 bp upstream of the start codon)", html)
         self.assertIn('id="recurrent-table"', html)
         self.assertEqual(2, html.count('class="mr-sample '))
@@ -51,7 +51,7 @@ class PageTestCase(fx.RecurrentFixture):
 
     def test_the_sidebar_and_the_header_bar_carry_the_entry(self):
         html = self.get().content.decode()
-        self.assertIn('href="/recurrent/?experiment_id=%d">&nbsp;&nbsp;&nbsp;Recurrent</a>'
+        self.assertIn('href="/recurrent/?experiment_id=%d">Recurrent</a>'
                       % self.experiment.id, html)
 
     def test_the_default_minimum_is_two_where_any_gene_reaches_it(self):
