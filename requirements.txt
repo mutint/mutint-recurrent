@@ -1,0 +1,6 @@
+# Install dependencies from mutint-core first:
+#   pip install -r mutint-core/requirements.txt
+#
+# mutint-recurrent-specific additions (if any):
+#
+# There are none. The page is a derivation over core's models, two scripts and a template.

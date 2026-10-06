@@ -1,0 +1,9 @@
+# mutint-recurrent's documentation, read through an assembled project's manual --
+# `./mutint docs` collects it. The page is under "Using MutInt" because that is who it is for.
+
+site_name: mutint-recurrent
+site_description: Genes mutated in several independent populations
+
+nav:
+  - Using MutInt:
+      - Recurrent: using/recurrent.md

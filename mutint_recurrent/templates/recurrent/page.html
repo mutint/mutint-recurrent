@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+{% comment %} The Recurrent page. The derivation travels as JSON (`recurrent-data`) and the two
+   views are drawn by the page's scripts: recurrent.js owns the controls and the table,
+   recurrent_plot.js draws one SVG per gene. The table's header is server-rendered, as the
+   matrix's is, so a test can count its columns and a sample column wears its population's
+   color from the start. {% endcomment %}
+{% block title %}{{ title }}{% endblock %}
+{% block scripts_and_style %}
+    <link rel="stylesheet" href="{% static 'css/breseq_table.css' %}?v={{ asset_version }}">
+    <link rel="stylesheet" href="{% static 'mutint_recurrent/recurrent.css' %}?v={{ asset_version }}">
+    <script src="{% static 'mutint_recurrent/recurrent_plot.js' %}?v={{ asset_version }}"></script>
+    <script src="{% static 'mutint_recurrent/recurrent.js' %}?v={{ asset_version }}"></script>
+{% endblock %}
+{% block header %}
+    <b><a href="/project/{{ project_id }}">{{ project_name }}</a>: {{ experiment_name }}</b> - Recurrent
+{% endblock %}
+{% block content %}
+{% include "recurrent/_glyphs.html" %}
+<div class="mutint-recurrent" data-recurrent
+     data-experiment-id="{{ experiment_id }}"
+     data-authenticated="{% if authenticated %}1{% else %}0{% endif %}"
+     data-preferences-url="{{ preferences_url }}"
+     data-default-minimum="{{ default_minimum }}">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    {{ data|json_script:"recurrent-data" }}
+    {% if authenticated %}{{ preferences|json_script:"recurrent-prefs" }}{% endif %}
+
+    <p>Genes recurrently mutated in independent populations. Distinct mutations inside a gene
+        or its putative promoter region ({{ promoter_distance }} bp upstream of the start codon)
+        count once per population. Symbols show the type of mutation. Shading shows the
+        predicted effect on gene function.</p>
+
+    <ul class="nav nav-tabs mr-tabs" data-role="view">
+        <li class="active"><a href="#" data-view="table">Table</a></li>
+        <li{% if not data.has_reference %} class="disabled"{% endif %}><a href="#" data-view="plots"
+            {% if not data.has_reference %}data-disabled="1" title="The reference genome could not be read, so genes cannot be drawn."{% endif %}>Gene plots</a></li>
+    </ul>
+    <div class="btn-row mr-controls">
+        <label class="view-filter-field mr-minimum">Minimum populations
+            <input type="range" min="1" max="{{ data.max_count|default:1 }}" step="1"
+                   value="{{ default_minimum }}" data-role="min-slider"
+                   aria-label="Minimum number of populations a gene is mutated in"/>
+            <input type="number" class="form-control" min="1" max="{{ data.max_count|default:1 }}"
+                   value="{{ default_minimum }}" data-role="min-box"
+                   aria-label="Minimum number of populations a gene is mutated in"/>
+        </label>
+        <label class="view-filter-field">of
+            <input type="text" class="form-control" readonly size="3"
+                   value="{{ data.max_count }}" data-role="max-box"
+                   title="The most populations any gene is mutated in"/>
+        </label>
+        <label class="mr-check" title="A deletion, amplification, conversion or inversion that crosses more than one gene is a hit on each of them only when this is ticked">
+            <input type="checkbox" data-role="span-deletions"/> Count mutations spanning multiple genes
+        </label>
+    </div>
+    <p class="mr-count" data-role="count"></p>
+    <div class="btn-row mr-controls mr-display-controls">
+        <div class="btn-group" data-role="columns-group">
+            <button type="button" class="btn btn-default dropdown-toggle"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Columns <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu mutint-menu mutint-select-list" data-role="columns">
+                {% for column in columns %}
+                    <li data-value="{{ column.key }}"{% if column.default_visible %} class="active"{% endif %}>
+                        <a href="#">{{ column.title }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <label class="view-filter-field mr-color" data-role="column-color-group" title="What the sample columns' headers are colored by">Color samples by:
+            <select class="form-control" data-role="column-color">
+                <option value="population">population</option>
+                <option value="treatment">treatment</option>
+                <option value="none">nothing</option>
+            </select>
+        </label>
+        <div class="mr-export" data-role="export-group">
+            Export table:
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-default" data-export="csv">CSV</button>
+                <button type="button" class="btn btn-default" data-export="svg">SVG</button>
+            </div>
+        </div>
+        <label class="view-filter-field mr-color" data-role="color-group" title="Whether each flag names the populations it was found in, and how the names are colored">Population labels:
+            <select class="form-control" data-role="color">
+                <option value="hidden">hidden</option>
+                <option value="none">black</option>
+                <option value="population">color by population</option>
+                <option value="treatment">color by treatment</option>
+            </select>
+        </label>
+        <div class="mr-scale" data-role="scale-group" title="Fit every gene to the width, or draw all of them at one scale so their lengths compare">
+            Plot scale:
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-default active" data-scale="fit">Fit to width</button>
+                <button type="button" class="btn btn-default" data-scale="same">Same scale</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mr-legend">
+        <fieldset class="mr-legend-box">
+            <legend>Mutation type</legend>
+            {% for glyph, words in glyphs %}
+                <span class="mr-legend-entry"><svg class="mr-glyph glyph-solid"><use href="#mr-{{ glyph }}"/></svg> {{ words }}</span>
+            {% endfor %}
+        </fieldset>
+        <fieldset class="mr-legend-box">
+            <legend>Mutation effect</legend>
+            {% for shade, words in shades %}
+                <span class="mr-legend-entry"><svg class="mr-glyph glyph-{{ shade }}"><use href="#mr-square"/></svg> {{ words }}</span>
+            {% endfor %}
+        </fieldset>
+    </div>
+
+    <div data-role="table-view">
+        <div class="mr-scroll">
+            <table class="table mr-table" id="recurrent-table">
+                <thead>
+                    <tr>
+                        <th data-key="count" title="Populations the gene is mutated in">#</th>
+                        <th data-key="gene">Gene</th>
+                        {% for column in columns %}
+                            <th data-key="{{ column.key }}"{% if not column.default_visible %} hidden{% endif %}>{{ column.title }}</th>
+                        {% endfor %}
+                        {% for sample in data.samples %}
+                            <th class="mr-sample sample-palette-{{ sample.palette }} treatment-palette-{{ sample.treatment_palette|default_if_none:'none' }}" data-sample="{{ sample.id }}"><a class="mutation-matrix-vertical" href="{{ sample.url }}" title="{{ sample.label }} ({{ sample.population }}) &mdash; view this sample's mutations">{{ sample.label }}</a></th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <p class="text-muted" data-role="empty" hidden>No gene is mutated in that many populations.</p>
+    </div>
+
+    <div data-role="plots-view" hidden>
+        <div data-role="plots"></div>
+    </div>
+</div>
+{% endblock %}
