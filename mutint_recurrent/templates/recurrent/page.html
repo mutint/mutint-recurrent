@@ -89,6 +89,10 @@
                 <option value="treatment">color by treatment</option>
             </select>
         </label>
+        <label class="view-filter-field mr-flank" data-role="flank-group" title="How far each plot reaches beyond the gene on its 3' side and beyond the promoter region on its 5' side; every gene in that reach is drawn">Flanking:
+            <input type="number" class="form-control" min="0" max="{{ data.max_flank }}" step="50"
+                   value="{{ data.default_flank }}" data-role="flank" aria-label="Flanking bases"/> bp
+        </label>
         <div class="mr-scale" data-role="scale-group" title="Fit every gene to the width, or draw all of them at one scale so their lengths compare">
             Plot scale:
             <div class="btn-group" role="group">

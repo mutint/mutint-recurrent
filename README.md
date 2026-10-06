@@ -12,9 +12,10 @@ genes that reach it:
   for a synonymous substitution, tombstone for a nonsense one, bowtie for a mobile element,
   and so on), shaded by whether it is predicted to inactivate the gene: solid when it is,
   outlined when it is not, gray in the promoter or in the last 20% of the gene.
-- **Gene plots** -- each gene drawn as an arrow in genome orientation with its upstream
-  intergenic region shaded as the promoter, a little of each neighbouring gene, and a flag
-  per mutation at its coordinate using the same glyphs. Each plot downloads as SVG.
+- **Gene plots** -- each gene drawn as an arrow in genome orientation with the 150 bp
+  upstream of its start codon shaded as the promoter region, the neighbouring genes as far
+  as a flanking you set, and a flag per mutation at its coordinate using the same glyphs. Each plot downloads
+  as SVG.
 
 Nothing is stored: the page derives its answer from the gene lists breseq's annotator writes
 on every mutation, with the designated ancestor subtracted.

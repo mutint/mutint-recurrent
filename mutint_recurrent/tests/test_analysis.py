@@ -143,21 +143,54 @@ class ReferenceTestCase(fx.RecurrentFixture):
                           a["locus_tag"]))
         self.assertTrue(self.data["has_reference"])
 
-    def test_the_window_of_a_plus_strand_gene(self):
+    def test_the_promoter_of_a_plus_strand_gene(self):
         w = self.genes["geneA"]["window"]
-        # No gene before it: the promoter runs from the contig's start; the window takes 300
-        # bases (more than 15% of 300) into geneB after it.
+        # No gene before it: the promoter is the 100 bases from the contig's start, inside
+        # the annotator's 150. Every other gene on the contig is within the largest flank.
         self.assertEqual([1, 100], w["promoter"])
-        self.assertEqual(1, w["lo"])
-        self.assertEqual(900, w["hi"])
-        self.assertEqual(["geneB"], [n["name"] for n in w["neighbors"]])
-
-    def test_the_window_of_a_minus_strand_gene(self):
-        w = self.genes["geneB"]["window"]
-        # Upstream of a minus-strand gene is to its right: the promoter is the whole
-        # intergenic stretch up to geneC, and both neighbours show 300 bases.
-        self.assertEqual([901, 1200], w["promoter"])
-        self.assertEqual(101, w["lo"])
-        self.assertEqual(1500, w["hi"])
-        self.assertEqual(["geneA", "geneC"], [n["name"] for n in w["neighbors"]])
+        self.assertEqual(["geneB", "geneC"], [n["name"] for n in w["neighbors"]])
         self.assertEqual(2000, w["contig_length"])
+
+    def test_the_promoter_of_a_minus_strand_gene_is_capped_at_the_annotators_distance(self):
+        from mutint_import.annotate.annotator import PROMOTER_DISTANCE
+        w = self.genes["geneB"]["window"]
+        # Upstream of a minus-strand gene is to its right: the gap to geneC is 300 bases,
+        # and the band is the 150 a mutation counts in.
+        self.assertEqual(150, PROMOTER_DISTANCE)
+        self.assertEqual([901, 900 + PROMOTER_DISTANCE], w["promoter"])
+        self.assertEqual(["geneA", "geneC"], [n["name"] for n in w["neighbors"]])
+
+    def test_the_payload_carries_the_plots_rules(self):
+        self.assertEqual(150, self.data["promoter_distance"])
+        self.assertEqual(300, self.data["default_flank"])
+        self.assertGreaterEqual(self.data["max_flank"], self.data["default_flank"])
+
+
+class OverlapTestCase(fx.RecurrentFixture):
+    """Neighbouring genes may overlap -- operon genes by their `ATGA`, a gene wholly inside
+    another -- and the plot names the overlapping gene, not the one beyond it."""
+    GENES = (
+        ("geneA", "ECK_0001", 101, 400, "+", "the first gene"),
+        ("geneY", "ECK_0009", 150, 300, "+", "a gene inside the first"),
+        ("geneX", "ECK_0008", 397, 700, "+", "a gene overlapping the first's end"),
+        ("geneC", "ECK_0003", 1201, 1500, "+", "the third gene"),
+    )
+    SAMPLES = {"1-1-1-1": [fx.NONSENSE_A, fx.SNP_X, fx.SNP_Y]}
+
+    def setUp(self):
+        super().setUp()
+        self.genes = by_name(recurrent_genes(self.experiment))
+
+    def test_an_overlapping_gene_is_among_the_neighbours(self):
+        w = self.genes["geneA"]["window"]
+        self.assertEqual(["geneY", "geneX", "geneC"], [n["name"] for n in w["neighbors"]])
+
+    def test_a_start_codon_under_the_neighbour_has_no_promoter(self):
+        w = self.genes["geneX"]["window"]
+        self.assertIn("geneA", [n["name"] for n in w["neighbors"]])
+        self.assertIsNone(w["promoter"])
+
+    def test_a_gene_inside_another_has_no_promoter(self):
+        w = self.genes["geneY"]["window"]
+        self.assertIn("geneA", [n["name"] for n in w["neighbors"]])
+        self.assertIsNone(w["promoter"])

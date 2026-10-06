@@ -3,9 +3,10 @@
  * `window.mutintRecurrentPlot.box(gene, data)` returns a <div> holding the heading, the SVG
  * and a download link; `draw(gene, data, width)` returns the SVG alone. The drawing is plain
  * SVG elements -- rect, path, line, text and <use> of the page's glyph sprite -- in genome
- * orientation: the x axis is the gene's `window` (`lo..hi` on its contig), the gene a pointed
- * rectangle with the point on its 3' end, the upstream intergenic region shaded and labelled
- * as the promoter, and the nearest gene each side drawn pale as far as the window reaches.
+ * orientation: the x axis runs the reader's flanking beyond the gene on its 3' side and beyond
+ * its promoter region on its 5' side (`windowOf`), the gene a pointed rectangle with the point
+ * on its 3' end, the promoter region (the 150 bp a mutation counts in) shaded, and every other
+ * gene in the window drawn pale, clipped at its edges.
  *
  * Flags come in two kinds. A **point** -- a base substitution, a small indel, a mobile element
  * (drawn at its insertion point, not over its target-site duplication) -- is a pole rising from
@@ -165,7 +166,9 @@
         width = width || 800;
         options = options || {};
         var withPopulations = options.populations !== false;
-        var w = gene.window;
+        var w = windowOf(gene, data, options.flank === undefined ? (data.default_flank || 300) : options.flank);
+        w.promoter = gene.window.promoter;
+        w.neighbors = (gene.window.neighbors || []).filter(function (n) { return n.end >= w.lo && n.start <= w.hi; });
         var inner = width - MARGIN.left - MARGIN.right;
         var leftEdge = MARGIN.left, rightEdge = MARGIN.left + inner;
         var span = Math.max(1, w.hi - w.lo);
@@ -210,7 +213,7 @@
         svg.setAttribute("data-left", minX);
         svg.setAttribute("xmlns:xlink", XLINK);
 
-        /* Promoter: the whole upstream intergenic region, as a band and nothing else -- the
+        /* Promoter: the counted distance upstream of the start codon, as a band and nothing else -- the
            legend says what the band is. */
         if (w.promoter) {
             var pLeft = clampX(w.promoter[0]), pRight = clampX(w.promoter[1] + 1);
@@ -528,6 +531,17 @@
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     }
 
+    /* The window a gene is drawn in: `flank` bases beyond it on its 3' side and beyond its
+       promoter region on its 5' side -- the promoter is where mutations still count, so the
+       flank is measured past it and nothing that counts is ever off the drawing -- clipped
+       to the contig. */
+    function windowOf(gene, data, flank) {
+        var upstream = (data.promoter_distance || 0) + flank;
+        var lo = gene.strand === -1 ? gene.start - flank : gene.start - upstream;
+        var hi = gene.strand === -1 ? gene.end + upstream : gene.end + flank;
+        return { lo: Math.max(1, lo), hi: Math.min(gene.window.contig_length, hi) };
+    }
+
     /* The scale that fits a window of `bases` into `boxWidth` pixels; `options.pxPerBase` in
        `box` and `draw` makes every plot share it. */
     function pxPerBase(boxWidth, bases) {
@@ -562,8 +576,9 @@
         var boxWidth = Math.max(400, (document.querySelector("[data-role='plots']") || div).clientWidth || 800);
         var width = boxWidth;
         if (options && options.pxPerBase) {
+            var span = windowOf(gene, data, options.flank === undefined ? (data.default_flank || 300) : options.flank);
             width = Math.min(boxWidth, Math.max(120,
-                Math.round(MARGIN.left + MARGIN.right + (gene.window.hi - gene.window.lo) * options.pxPerBase)));
+                Math.round(MARGIN.left + MARGIN.right + (span.hi - span.lo) * options.pxPerBase)));
         }
         var svg = draw(gene, data, width, options);
         var drawn = Number(svg.getAttribute("width"));
@@ -582,5 +597,5 @@
     }
 
     window.mutintRecurrentPlot = { draw: draw, box: box, standalone: standalone, pxPerBase: pxPerBase,
-                                   tableSvg: tableSvg, download: download };
+                                   windowOf: windowOf, tableSvg: tableSvg, download: download };
 }());

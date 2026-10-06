@@ -191,6 +191,26 @@
             return PALETTE[sample.palette % PALETTE.length];
         }
 
+        /* Flanking: how far a plot reaches beyond the gene (and beyond its promoter region on
+           the 5' side), 0 to the largest the server sent genes for. Remembered per reader. */
+        var flankBox = root.querySelector("[data-role='flank']");
+        var flank = data.default_flank;
+        var storedFlank = prefs.get("recurrent.flank", null);
+        if (typeof storedFlank === "number" && storedFlank >= 0) { flank = Math.min(data.max_flank, Math.round(storedFlank)); }
+        flankBox.value = String(flank);
+        function commitFlank() {
+            var value = parseInt(flankBox.value, 10);
+            if (!isFinite(value)) { flankBox.value = String(flank); return; }
+            flank = Math.max(0, Math.min(data.max_flank, value));
+            flankBox.value = String(flank);
+            prefs.set("recurrent.flank", flank);
+            if (view === "plots") { drawPlots(shownGenes()); }
+        }
+        flankBox.addEventListener("change", commitFlank);
+        flankBox.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") { event.preventDefault(); commitFlank(); flankBox.blur(); }
+        });
+
         spanBox.checked = prefs.get("recurrent.span_deletions", false) === true;
         spanBox.addEventListener("change", function () {
             prefs.set("recurrent.span_deletions", spanBox.checked);
@@ -371,7 +391,9 @@
             var pxPerBase = null;
             if (scaleMode === "same") {
                 var widest = genes.reduce(function (most, gene) {
-                    return gene.window ? Math.max(most, gene.window.hi - gene.window.lo) : most;
+                    if (!gene.window) { return most; }
+                    var span = window.mutintRecurrentPlot.windowOf(gene, data, flank);
+                    return Math.max(most, span.hi - span.lo);
                 }, 0);
                 if (widest) { pxPerBase = window.mutintRecurrentPlot.pxPerBase(plots.clientWidth, widest); }
             }
@@ -385,7 +407,7 @@
                     plots.appendChild(heading);
                 }
                 plots.appendChild(window.mutintRecurrentPlot.box(gene, data, extras(gene),
-                                                                 { colorOf: colorOf, pxPerBase: pxPerBase,
+                                                                 { colorOf: colorOf, pxPerBase: pxPerBase, flank: flank,
                                                                    populations: colorSelect.value !== "hidden" }));
             });
             empty.hidden = genes.length > 0;
@@ -431,6 +453,7 @@
             root.querySelector("[data-role='export-group']").hidden = name !== "table";
             root.querySelector("[data-role='column-color-group']").hidden = name !== "table";
             root.querySelector("[data-role='scale-group']").hidden = name !== "plots";
+            root.querySelector("[data-role='flank-group']").hidden = name !== "plots";
             if (save) { prefs.set("recurrent.view", name); }
             refresh();
         }

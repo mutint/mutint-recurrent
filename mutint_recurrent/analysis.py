@@ -33,7 +33,7 @@ import collections
 import math
 import re
 
-from mutint_import.annotate.annotator import INACTIVATING_OVERLAP_FRACTION
+from mutint_import.annotate.annotator import INACTIVATING_OVERLAP_FRACTION, PROMOTER_DISTANCE
 from mutint_import.annotate.display import gene_list_names, text_from_html
 from mutint_import.annotation import reference_sequences_for
 from mutint_sample.breseq_report import describe_mutation
@@ -51,11 +51,11 @@ GENE_LISTS = (
     ("genes_promoter", "locus_tags_promoter"),
 )
 
-#: How much of a neighbouring gene the plot shows for context: this many bases, or this
-#: fraction of the gene's own length, whichever is more, and never more than the neighbour
-#: has. Enough, at most scales, for the neighbour's name to sit inside its box.
-NEIGHBOR_CONTEXT_BASES = 300
-NEIGHBOR_CONTEXT_FRACTION = 0.15
+#: The plot's flanking: this many bases beyond the gene on its 3' side and beyond the promoter
+#: region on its 5' side, so nothing that counts is ever off the drawing. The reader sets it,
+#: from 0 up to `MAX_FLANK_BASES`; the server sends every gene within the largest flank.
+DEFAULT_FLANK_BASES = 300
+MAX_FLANK_BASES = 5000
 
 NO_POPULATION = "(no population)"
 
@@ -182,58 +182,54 @@ class GeneIndex:
         }
 
     def plot_window(self, feature):
-        """What the gene's plot shows: the gene, its upstream intergenic region as the
-        promoter, and a little of the nearest gene each side.
+        """What the gene's plot can show: its promoter band and every gene near it.
 
-        Neighbours are the nearest gene locations strictly before and after the gene's span
-        on its contig, skipping the gene's own sublocations. The promoter is the whole
-        intergenic stretch on the gene's 5' side -- strand decides which side -- from the
-        gene's end to the neighbour's near edge, or to the contig's end where there is no
-        neighbour. The window takes `NEIGHBOR_CONTEXT_BASES` (or the fraction) into each
-        neighbour and is clipped to the contig.
+        The promoter band is `PROMOTER_DISTANCE` bases upstream of the start codon -- strand
+        decides which side -- clipped where a neighbouring gene is nearer and absent where
+        that neighbour covers the start codon: the region a mutation counts in, the
+        annotator's own rule, rather than the whole intergenic stretch (581 bp on gltB).
+
+        `neighbors` is every other gene location within `MAX_FLANK_BASES` past the gene and
+        its promoter on either side, in genome order, overlapping ones included -- 758
+        adjacent pairs in REL606 overlap, and the first version took only a neighbour lying
+        clear of the gene, so it drew the gene beyond an overlapping one with a phantom gap
+        and promoter between. The page decides the window from the reader's flanking and
+        draws whichever of these fall in it.
         """
         seq_id = self.seq_id_of(feature)
         sequence = self.references[seq_id]
         contig_length = len(sequence)
         start, end, strand = self.span(feature)
-        previous = following = None
+
+        # The nearest gene edges either side, overlapping or not, clip the promoter band.
+        previous_edge = following_edge = None
         for location in sequence.gene_locations:
             if location.feature is feature:
                 continue
-            if location.end_1 < start and (previous is None or location.end_1 > previous.end_1):
-                previous = location
-            if location.start_1 > end and (following is None
-                                           or location.start_1 < following.start_1):
-                following = location
-
-        context = max(NEIGHBOR_CONTEXT_BASES, int(NEIGHBOR_CONTEXT_FRACTION * (end - start + 1)))
-        lo = max(1, (previous.end_1 - context + 1) if previous else start - context)
-        hi = min(contig_length, (following.start_1 + context - 1) if following else end + context)
-        if previous is not None:
-            lo = max(lo, previous.start_1)
-        if following is not None:
-            hi = min(hi, following.end_1)
+            if location.start_1 < start and (previous_edge is None or location.end_1 > previous_edge):
+                previous_edge = location.end_1
+            if location.end_1 > end and (following_edge is None or location.start_1 < following_edge):
+                following_edge = location.start_1
 
         if strand == -1:
-            promoter = (end + 1, following.start_1 - 1 if following else contig_length)
+            promoter = (end + 1, min(following_edge - 1 if following_edge else contig_length,
+                                     end + PROMOTER_DISTANCE))
         else:
-            promoter = (previous.end_1 + 1 if previous else 1, start - 1)
+            promoter = (max(previous_edge + 1 if previous_edge else 1, start - PROMOTER_DISTANCE),
+                        start - 1)
         if promoter[0] > promoter[1]:
             promoter = None
 
-        neighbors = []
-        for location in (previous, following):
-            if location is None:
-                continue
-            neighbors.append({
-                "name": location.feature.name or location.feature.locus_tag or "",
-                "start": location.start_1,
-                "end": location.end_1,
-                "strand": location.strand,
-            })
+        reach = MAX_FLANK_BASES + PROMOTER_DISTANCE
+        lo, hi = max(1, start - reach), min(contig_length, end + reach)
+        neighbors = [{
+            "name": location.feature.name or location.feature.locus_tag or "",
+            "start": location.start_1,
+            "end": location.end_1,
+            "strand": location.strand,
+        } for location in sequence.gene_locations
+            if location.feature is not feature and location.end_1 >= lo and location.start_1 <= hi]
         return {
-            "lo": lo,
-            "hi": hi,
             "contig_length": contig_length,
             "promoter": list(promoter) if promoter else None,
             "neighbors": neighbors,
@@ -376,5 +372,9 @@ def recurrent_genes(experiment):
         "mutations": {str(mutation_id): entry for mutation_id, entry in mutations.items()},
         "max_count": max((g["count"] for g in rows), default=0),
         "has_reference": index.available,
+        # The plot's rules, so the page cannot drift from the derivation.
+        "promoter_distance": PROMOTER_DISTANCE,
+        "default_flank": DEFAULT_FLANK_BASES,
+        "max_flank": MAX_FLANK_BASES,
     }
 

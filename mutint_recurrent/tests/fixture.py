@@ -47,9 +47,9 @@ GENES = (
 )
 
 
-def gff3():
+def gff3(genes=GENES):
     lines = ["##gff-version 3", "##sequence-region\t%s\t1\t%d" % (SEQ_ID, LENGTH)]
-    for name, tag, start, end, strand, product in GENES:
+    for name, tag, start, end, strand, product in genes:
         lines.append("\t".join([
             SEQ_ID, "test", "CDS", str(start), str(end), ".", strand, "0",
             "ID=%s;Name=%s;locus_tag=%s;product=%s" % (tag, name, tag, product)]))
@@ -76,6 +76,8 @@ FRAMESHIFT_A = ("DEL", SEQ_ID, 140, 2, "frequency=1")
 PROMOTER_B = ("SNP", SEQ_ID, 950, "G", "frequency=1")
 SPANNING_AB = ("DEL", SEQ_ID, 350, 300, "frequency=1")
 INTERGENIC_FAR = ("SNP", SEQ_ID, 1700, "G", "frequency=1")
+SNP_X = ("SNP", SEQ_ID, 500, "G", "frequency=1")    # inside geneX, in OverlapTestCase's layout
+SNP_Y = ("SNP", SEQ_ID, 200, "G", "frequency=1")    # inside geneY (and geneA) there
 SPANNING_AMP = ("AMP", SEQ_ID, 350, 300, 2, "frequency=1")   # duplicates the end of geneA and of geneB
 AMP_IN_A = ("AMP", SEQ_ID, 110, 30, 2, "frequency=1")        # inside geneA alone
 
@@ -84,6 +86,7 @@ class RecurrentFixture(TestCase):
     """Import `SAMPLES` (`{name: [mutation lines]}`) as breseq folders into one experiment."""
 
     SAMPLES = {}
+    GENES = GENES   # a test class may lay out its own genes
 
     def setUp(self):
         self.user = User.objects.create(username="tester", email="t@e.com",
@@ -102,7 +105,7 @@ class RecurrentFixture(TestCase):
         for name, lines in self.SAMPLES.items():
             breseq_fixture.write_sample(
                 self.drop, name, sequences=[(SEQ_ID, sequence())], gd_text=gd(*lines),
-                gff3_override=gff3())
+                gff3_override=gff3(self.GENES))
         breseq_folder.import_breseq_folders(
             self.drop, project_name="P", experiment_name="E", owner_name="tester")
         self.experiment = Experiment.objects.get()

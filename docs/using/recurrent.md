@@ -55,8 +55,9 @@ or as an SVG drawing of the table with its legend.
 ## Gene plots
 
 **Gene plots** draws each gene that reaches the minimum: the gene as an arrow in its genome
-orientation, its upstream intergenic region shaded as the promoter, a little of the
-neighbouring gene on each side, and one flag per mutation at its position -- a tick for a
+orientation, the 150 bp upstream of its start codon shaded as the promoter region (the same
+distance a mutation counts within), the neighbouring genes as far as **Flanking** reaches
+beyond the gene and its promoter (300 bp unless you change it), and one flag per mutation at its position -- a tick for a
 point mutation or a mobile element above the gene, a bracket below it over the extent of a
 large deletion, amplification, conversion or inversion -- carrying the same glyph, the mutation's description (the
 base and amino-acid change for a substitution) and the populations it was found in. **Fit to width** draws every gene across the page; **Same scale** draws them all at one scale,

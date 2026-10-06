@@ -117,10 +117,21 @@ the matrix's own boxes do, remembered as `recurrent.column_color`; the SVG expor
 too: a shown column's words join each plot's heading.
 
 **Each plot is plain SVG built by `recurrent_plot.js`** -- rect, path, line, text and `<use>`
-of the sprite -- in genome orientation: the x axis is the gene's `window`, the gene a rectangle
-pointed at its 3' end, the whole upstream intergenic region shaded and labelled `promoter`,
-and the nearest gene each side drawn pale as far as the window reaches (200 bases or a tenth
-of the gene into each, `GeneIndex.plot_window`). **A point mutation is a pole to a lane above the
+of the sprite -- in genome orientation: the x axis runs the reader's **Flanking** (`recurrent.flank`, 300 bp
+by default, 0 up to `MAX_FLANK_BASES`) beyond the gene on its 3' side and beyond its promoter
+region on its 5' side -- measured past the promoter, since mutations still count there and
+nothing that counts may be off the drawing -- the gene a rectangle pointed at its 3' end, the
+promoter band the annotator's `PROMOTER_DISTANCE` (150 bp) upstream of the start codon,
+clipped where a neighbouring gene is nearer and absent where it covers the start codon (it
+was the whole intergenic stretch, 581 bp on gltB), and every other gene in the window drawn
+pale and clipped at its edges. The window is decided in the browser (`windowOf`), so the
+server sends each gene's promoter and every gene within the largest flank
+(`GeneIndex.plot_window`), and the page carries the three rules in its payload. Neighbours
+are any gene type the annotator counts, rRNA and tRNA included, and **may overlap the
+gene**: 758 adjacent pairs in REL606 do, and the first version took only a neighbour lying
+clear of the gene, so it drew the gene beyond an overlapping one with a phantom gap and
+promoter between.
+**A point mutation is a pole to a lane above the
 gene** ending in its glyph with the label beside it -- a base substitution, a small indel,
 and a mobile element, which is drawn at its insertion point rather than over its target-site
 duplication. **A large mutation -- a large deletion, amplification, conversion or inversion -- is a
