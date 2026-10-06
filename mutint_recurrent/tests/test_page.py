@@ -24,7 +24,7 @@ class PageTestCase(fx.RecurrentFixture):
         response = self.get()
         self.assertEqual(200, response.status_code)
         html = response.content.decode()
-        self.assertIn('class="mutint-experiment-name">E</span></b> &mdash; Recurrent', html)
+        self.assertIn('class="mutint-experiment-name">E</span></b> <span class="mutint-header-sep">&raquo;</span> Recurrent', html)
         self.assertIn("promoter region (150 bp upstream of the start codon)", html)
         self.assertIn('id="recurrent-table"', html)
         self.assertEqual(2, html.count('class="mr-sample '))
