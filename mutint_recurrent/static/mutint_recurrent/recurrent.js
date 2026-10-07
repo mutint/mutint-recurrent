@@ -429,6 +429,56 @@
             refresh();
         }
 
+        /* A collapse bar under the legend, the matrix's own (its classes come from
+           breseq_table.css, which the page links): clicked, it folds away everything above
+           it -- the legend, the controls, the tabs, the introduction, and up through the
+           page header -- to give the table or the plots the height, and clicked again brings
+           it all back. It stays put in both states, so what was folded is one click away.
+           Remembered as `recurrent.options`. */
+        var legend = root.querySelector(".mr-legend");
+        var optionsShown = !(prefs.get("recurrent.options", null) || {}).hidden;
+        function foldable() {
+            var found = [], el = legend;
+            while (el && el.id !== "mutint-content") {
+                for (var sib = el.previousElementSibling; sib; sib = sib.previousElementSibling) { found.push(sib); }
+                el = el.parentElement;
+            }
+            return found;
+        }
+        function applyOptions() {
+            [legend].concat(foldable()).forEach(function (el) {
+                el.classList.toggle("mutation-matrix-folded", !optionsShown);
+            });
+        }
+        var collapseBar = document.createElement("div");
+        collapseBar.className = "mutation-matrix-collapse";
+        collapseBar.setAttribute("role", "button");
+        collapseBar.tabIndex = 0;
+        var chevron = document.createElement("i");
+        chevron.setAttribute("aria-hidden", "true");
+        collapseBar.appendChild(chevron);
+        function drawCollapseBar() {
+            chevron.className = "fa " + (optionsShown ? "fa-angle-double-up" : "fa-angle-double-down");
+            collapseBar.title = optionsShown ? "Collapse everything above" : "Expand the header and the options";
+            collapseBar.setAttribute("aria-label", collapseBar.title);
+            collapseBar.setAttribute("aria-expanded", String(optionsShown));
+            collapseBar.classList.toggle("folded", !optionsShown);
+        }
+        function toggleOptions() {
+            optionsShown = !optionsShown;
+            applyOptions();
+            drawCollapseBar();
+            prefs.set("recurrent.options", { hidden: !optionsShown });
+            sizeScrollBox();
+        }
+        collapseBar.addEventListener("click", toggleOptions);
+        collapseBar.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleOptions(); }
+        });
+        legend.parentNode.insertBefore(collapseBar, legend.nextSibling);
+        applyOptions();
+        drawCollapseBar();
+
         slider.addEventListener("input", function () { setMinimum(slider.value, false); });
         slider.addEventListener("change", function () { setMinimum(slider.value, true); });
         function commitBox() {

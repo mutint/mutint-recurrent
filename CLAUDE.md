@@ -103,6 +103,11 @@ mutint-phylogeny's zoom pair is: the slider redraws live on `input`, the box com
 or Enter, and the box is never rewritten while it has focus. The read-only box beside them is
 the maximum, which the request asked to show.
 
+**A collapse bar under the legend folds everything above it** -- the legend, the controls,
+the tabs, the introduction and the page header -- the matrix's own bar and classes from
+`breseq_table.css`, remembered as `recurrent.options`, so the table or the plots get the
+height on a small screen.
+
 **The table draws no DataTable** and sorts nothing. It scrolls in a box the script sizes to
 the window, with the header stuck to the top and the gene columns stuck to the left -- the
 matrix's shape -- each pinned column's `left` written by the script as the sum of the shown
