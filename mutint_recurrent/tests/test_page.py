@@ -40,7 +40,7 @@ class PageTestCase(fx.RecurrentFixture):
         self.assertIn("mutint_recurrent/recurrent.js", html)
         self.assertIn("mutint_recurrent/recurrent_plot.js", html)
         self.assertIn("mutint_recurrent/recurrent.css", html)
-        self.assertIn('<symbol id="mr-tombstone"', html)
+        self.assertIn('<symbol id="glyph-tombstone"', html)
         self.assertIn('data-role="columns"', html)
         self.assertIn('data-role="span-deletions"', html)
         self.assertEqual(2, html.count('class="mr-legend-box"'))

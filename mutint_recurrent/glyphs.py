@@ -1,93 +1,13 @@
-"""Which glyph a mutation is drawn as, and what the three shades mean.
+"""The glyph rule and its names, re-exported from mutint-core.
 
-The glyph is the mutation's *type*, read from the columns the annotator promotes rather than
-from any display string: `mutation_type` (breseq's three letters), `snp_type` (the functional
-class of a base substitution) and `mutation_category` (which already applies breseq's 50 bp
-large/small cutoff). The shade is decided per gene in `analysis.py`, because one deletion can
-knock out one gene and merely clip the tail of the next.
-
-Every name here is a `<symbol id="mr-<glyph>">` in `templates/recurrent/_glyphs.html`;
-`GLYPHS` is the legend's order and the test that every glyph has a symbol.
+They were this plugin's until mutint-circos drew the same shapes on its rings; plugins do not
+import each other, so the rule and the sprite (`glyphs/sprite.html`, ids `glyph-<name>`) live
+in `mutint_common.glyphs`. The shade rule -- what a mutation does to a gene -- is still decided
+here, in `analysis.py`; only its three words are in core, beside the glyphs they are drawn with.
 """
 
-from mutint_sample.functional_change import functional_change_bucket
-
-CIRCLE = "circle"                 # synonymous base substitution
-SQUARE = "square"                 # nonsynonymous base substitution
-TOMBSTONE = "tombstone"           # nonsense base substitution
-DIAMOND_DOWN = "diamond-down"     # intergenic base substitution
-DIAMOND = "diamond"               # base substitution in a non-coding gene or a pseudogene
-TRIANGLE = "triangle"             # small (<= 50 bp) deletion
-TRIANGLE_DOWN = "triangle-down"   # small (<= 50 bp) insertion
-BOWTIE = "bowtie"                 # mobile element insertion
-TRAPEZOID_DOWN = "trapezoid-down" # large (> 50 bp) deletion
-TRAPEZOID = "trapezoid"           # large (> 50 bp) insertion or amplification
-PARALLELOGRAM = "parallelogram"   # gene conversion or integration
-BARBELL = "barbell"               # inversion: two triangles pointing outward from a bar
-
-#: Every glyph with the words the legend shows beside it, in legend order.
-GLYPHS = (
-    (CIRCLE, "synonymous base substitution"),
-    (SQUARE, "nonsynonymous base substitution"),
-    (TOMBSTONE, "nonsense base substitution"),
-    (DIAMOND_DOWN, "intergenic base substitution"),
-    (DIAMOND, "base substitution in an RNA gene or pseudogene"),
-    (TRIANGLE, "small deletion (≤ 50 bp)"),
-    (TRIANGLE_DOWN, "small insertion (≤ 50 bp)"),
-    (BOWTIE, "mobile element insertion"),
-    (TRAPEZOID_DOWN, "large deletion (> 50 bp)"),
-    (TRAPEZOID, "large insertion or amplification (> 50 bp)"),
-    (PARALLELOGRAM, "gene conversion or integration"),
-    (BARBELL, "inversion"),
+from mutint_common.glyphs import (  # noqa: F401
+    BARBELL, BOWTIE, CIRCLE, DIAMOND, DIAMOND_DOWN, GLYPHS, GRAY, OUTLINE, PARALLELOGRAM,
+    SHADES, SOLID, SQUARE, TOMBSTONE, TRAPEZOID, TRAPEZOID_DOWN, TRIANGLE, TRIANGLE_DOWN,
+    glyph_for, size_change,
 )
-
-#: The three shades, in legend order, with what each says about the gene.
-SOLID = "solid"
-OUTLINE = "outline"
-GRAY = "gray"
-SHADES = (
-    (SOLID, "predicted to inactivate the gene"),
-    (OUTLINE, "no inactivation predicted"),
-    (GRAY, "in the promoter, or in the last 20% of the gene"),
-)
-
-_SNP_GLYPHS = {
-    "synonymous": CIRCLE,
-    "nonsynonymous": SQUARE,
-    "nonsense": TOMBSTONE,
-    "intergenic": DIAMOND_DOWN,
-    "noncoding": DIAMOND,
-    "pseudogene": DIAMOND,
-}
-
-
-def glyph_for(mutation_type, snp_type, mutation_category, size_change=0):
-    """The glyph for one mutation.
-
-    `size_change` is the net change in length and is read only for a SUB, which breseq
-    classifies by its replaced span: a SUB that lengthens the genome is drawn as an
-    insertion, one that shortens it as a deletion, and one that replaces like with like as a
-    multi-base substitution (the square). A SNP with no functional class -- imported before
-    the reference was there -- is drawn as a square too, there being nothing better to say.
-    """
-    large = mutation_category in ("large_deletion", "large_insertion",
-                                  "large_amplification", "large_substitution")
-    if mutation_type == "SNP":
-        return _SNP_GLYPHS.get(functional_change_bucket(snp_type), SQUARE)
-    if mutation_type == "DEL":
-        return TRAPEZOID_DOWN if large else TRIANGLE
-    if mutation_type in ("INS", "AMP"):
-        return TRAPEZOID if large else TRIANGLE_DOWN
-    if mutation_type == "SUB":
-        if size_change > 0:
-            return TRAPEZOID if large else TRIANGLE_DOWN
-        if size_change < 0:
-            return TRAPEZOID_DOWN if large else TRIANGLE
-        return SQUARE
-    if mutation_type == "MOB":
-        return BOWTIE
-    if mutation_type in ("CON", "INT"):
-        return PARALLELOGRAM
-    if mutation_type == "INV":
-        return BARBELL
-    return SQUARE

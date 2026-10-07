@@ -14,7 +14,7 @@
 {% endblock %}
 {% block header %}{% include "experiment_header.html" with page="Recurrent" %}{% endblock %}
 {% block content %}
-{% include "recurrent/_glyphs.html" %}
+{% include "glyphs/sprite.html" %}
 <div class="mutint-recurrent" data-recurrent
      data-experiment-id="{{ experiment_id }}"
      data-file-stem="{{ file_stem }}"
@@ -107,13 +107,13 @@
         <fieldset class="mr-legend-box">
             <legend>Mutation type</legend>
             {% for glyph, words in glyphs %}
-                <span class="mr-legend-entry"><svg class="mr-glyph glyph-solid"><use href="#mr-{{ glyph }}"/></svg> {{ words }}</span>
+                <span class="mr-legend-entry"><svg class="mr-glyph glyph-solid"><use href="#glyph-{{ glyph }}"/></svg> {{ words }}</span>
             {% endfor %}
         </fieldset>
         <fieldset class="mr-legend-box">
             <legend>Mutation effect</legend>
             {% for shade, words in shades %}
-                <span class="mr-legend-entry"><svg class="mr-glyph glyph-{{ shade }}"><use href="#mr-square"/></svg> {{ words }}</span>
+                <span class="mr-legend-entry"><svg class="mr-glyph glyph-{{ shade }}"><use href="#glyph-square"/></svg> {{ words }}</span>
             {% endfor %}
         </fieldset>
     </div>

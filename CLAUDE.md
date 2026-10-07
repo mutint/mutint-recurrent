@@ -72,9 +72,12 @@ and no plots -- the counts and glyphs still work.
 ## The glyphs
 
 `glyph_for(mutation_type, snp_type, mutation_category, size_change)` reads the promoted
-columns, never a display string. `GLYPHS` in `glyphs.py` is the table and the legend's order;
-`_glyphs.html` is the `<symbol>` sprite the table cells, the legend and the plots all `<use>`,
-and `test_glyphs` asserts the two name the same set.
+columns, never a display string. **The rule and the sprite are mutint-core's now**
+(`mutint_common/glyphs.py`, `glyphs/sprite.html`, ids `glyph-<name>`), because mutint-circos
+draws the same shapes on its rings and plugins do not import each other; this plugin's
+`glyphs.py` re-exports them, the page includes core's sprite, and core's `test_glyphs`
+asserts the names and the symbols agree. `GLYPHS` is the table and the legend's order. The
+shade rule -- what a mutation does to the gene -- is still decided here, per gene.
 
 - SNP by `functional_change_bucket(snp_type)`: synonymous circle, nonsynonymous square,
   nonsense tombstone, intergenic inverted diamond, **noncoding or pseudogene upright diamond**

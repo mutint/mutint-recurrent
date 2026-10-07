@@ -58,8 +58,8 @@
     function use(glyph, shade, x, y, size) {
         var g = el("g", { "class": "glyph-" + shade,
                           transform: "translate(" + (x - size / 2) + "," + (y - size / 2) + ")" });
-        var u = el("use", { href: "#mr-" + glyph, width: size, height: size });
-        u.setAttributeNS(XLINK, "xlink:href", "#mr-" + glyph);
+        var u = el("use", { href: "#glyph-" + glyph, width: size, height: size });
+        u.setAttributeNS(XLINK, "xlink:href", "#glyph-" + glyph);
         g.appendChild(u);
         return g;
     }
@@ -346,7 +346,7 @@
                 var use = entry.querySelector("use");
                 var svg = entry.querySelector("svg");
                 return {
-                    glyph: (use.getAttribute("href") || "").replace("#mr-", ""),
+                    glyph: (use.getAttribute("href") || "").replace("#glyph-", ""),
                     shade: (svg.getAttribute("class").match(/glyph-(\w+)/) || [])[1] || "solid",
                     words: entry.textContent.trim()
                 };

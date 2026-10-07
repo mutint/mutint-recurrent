@@ -41,7 +41,7 @@ from mutint_sample.models import Mutation
 from mutint_sample.mutation_matrix import PALETTE_SIZE, palette_indexes, sample_page_url
 from mutint_sample.util import calls_for_samples, get_ordered_sample_dict
 
-from mutint_recurrent.glyphs import GRAY, OUTLINE, SOLID, glyph_for
+from mutint_recurrent.glyphs import GRAY, OUTLINE, SOLID, glyph_for, size_change
 
 #: The three lists, strongest first: a gene named in two of them -- a split-location gene a
 #: deletion removes one segment of and clips the other -- takes the first.
@@ -236,13 +236,6 @@ class GeneIndex:
         }
 
 
-def _size_change(mutation):
-    record = mutation.genome_diff
-    try:
-        return len(str(record.get("new_seq") or "")) - int(record.get("size") or 0)
-    except (TypeError, ValueError):
-        return 0
-
 
 _CODON_CHANGE = re.compile(r"\s*\([ACGTNacgtn]+\u2192[ACGTNacgtn]+\)\s*$")
 
@@ -322,7 +315,7 @@ def recurrent_genes(experiment):
             "id": mutation.id,
             "type": mutation.mutation_type,
             "glyph": glyph_for(mutation.mutation_type, mutation.snp_type,
-                               mutation.mutation_category, _size_change(mutation)),
+                               mutation.mutation_category, size_change(mutation.genome_diff)),
             "seq_id": mutation.seq_id,
             "start": start,
             "end": end,

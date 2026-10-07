@@ -1,7 +1,5 @@
-"""Which glyph each kind of mutation gets, and that every glyph has a symbol to draw."""
-
-import os
-import re
+"""Which glyph each kind of mutation gets, through this plugin's re-export of core's rule.
+That every glyph has a symbol is core's test now."""
 
 from django.test import SimpleTestCase
 
@@ -45,10 +43,3 @@ class GlyphTestCase(SimpleTestCase):
         self.assertEqual(glyphs.TRIANGLE, glyph_for("SUB", "", "small_indel", -3))
         self.assertEqual(glyphs.TRAPEZOID, glyph_for("SUB", "", "large_substitution", 80))
         self.assertEqual(glyphs.TRAPEZOID_DOWN, glyph_for("SUB", "", "large_substitution", -80))
-
-    def test_every_glyph_has_a_symbol_in_the_sprite(self):
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                            "templates", "recurrent", "_glyphs.html")
-        with open(path, encoding="utf-8") as handle:
-            symbols = set(re.findall(r'<symbol id="mr-([a-z-]+)"', handle.read()))
-        self.assertEqual({name for name, _ in glyphs.GLYPHS}, symbols)

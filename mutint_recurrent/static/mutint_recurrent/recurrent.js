@@ -21,8 +21,8 @@
         var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute("class", "mr-glyph glyph-" + shade);
         var use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-        use.setAttribute("href", "#mr-" + glyph);
-        use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#mr-" + glyph);
+        use.setAttribute("href", "#glyph-" + glyph);
+        use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#glyph-" + glyph);
         svg.appendChild(use);
         if (title) {
             var t = document.createElementNS("http://www.w3.org/2000/svg", "title");
@@ -127,7 +127,7 @@
         var GLYPH_WORDS = {}, SHADE_WORDS_SHORT = { solid: "inactivating", outline: "not inactivating", gray: "promoter or terminal" };
         Array.prototype.forEach.call(root.querySelectorAll(".mr-legend-box:first-of-type .mr-legend-entry"), function (entry) {
             var use = entry.querySelector("use");
-            GLYPH_WORDS[(use.getAttribute("href") || "").replace("#mr-", "")] = entry.textContent.trim();
+            GLYPH_WORDS[(use.getAttribute("href") || "").replace("#glyph-", "")] = entry.textContent.trim();
         });
         function shownColumns() {
             var all = [
