@@ -47,6 +47,7 @@
     function init(root) {
         var data = window.mutintPreferences.embedded("recurrent-data");
         var experimentId = root.getAttribute("data-experiment-id");
+        var fileStem = root.getAttribute("data-file-stem") || "recurrent";
         var prefs = window.mutintPreferences({
             authenticated: root.getAttribute("data-authenticated") === "1",
             url: root.getAttribute("data-preferences-url"),
@@ -153,13 +154,13 @@
                 lines.push(row.map(csvCell).join(","));
             });
             window.mutintRecurrentPlot.download("\ufeff" + lines.join("\n") + "\n",
-                                                "recurrent_" + experimentId + ".csv", "text/csv;charset=utf-8");
+                                                "recurrent_" + fileStem + ".csv", "text/csv;charset=utf-8");
         }
         function exportSvg() {
             var text = window.mutintRecurrentPlot.tableSvg(shownGenes(), data, shownColumns(), function (m, gene) {
                 return m.shades[gene.key] || "outline";
             }, headerColor);
-            window.mutintRecurrentPlot.download(text, "recurrent_" + experimentId + ".svg", "image/svg+xml");
+            window.mutintRecurrentPlot.download(text, "recurrent_" + fileStem + ".svg", "image/svg+xml");
         }
         Array.prototype.forEach.call(root.querySelectorAll("[data-export]"), function (button) {
             button.addEventListener("click", function () {
@@ -408,7 +409,8 @@
                 }
                 plots.appendChild(window.mutintRecurrentPlot.box(gene, data, extras(gene),
                                                                  { colorOf: colorOf, pxPerBase: pxPerBase, flank: flank,
-                                                                   populations: colorSelect.value !== "hidden" }));
+                                                                   populations: colorSelect.value !== "hidden",
+                                                                   fileStem: fileStem }));
             });
             empty.hidden = genes.length > 0;
         }

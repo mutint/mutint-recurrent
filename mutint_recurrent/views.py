@@ -12,6 +12,7 @@ import mutint_sample.views.common
 from mutint_common.logger import user_extra
 from mutint_common.preferences import get_preferences
 from mutint_common.util import get_user_context
+from mutint_export.util import safe_filename
 from mutint_import.annotate.annotator import PROMOTER_DISTANCE
 from mutint_experiment import models
 from mutint_recurrent.analysis import recurrent_genes
@@ -51,6 +52,9 @@ def recurrent(request):
         "project_name": experiment.project.name,
         "project_id": experiment.project.id,
         "title": experiment.name + " Recurrent",
+        # What a download is named by: the project and the experiment, never an id.
+        "file_stem": "%s_%s" % (safe_filename(experiment.project.name),
+                                safe_filename(experiment.name)),
         "data": data,
         "columns": [{"key": key, "title": title, "default_visible": visible}
                     for key, title, visible in COLUMNS],

@@ -17,6 +17,7 @@
 {% include "recurrent/_glyphs.html" %}
 <div class="mutint-recurrent" data-recurrent
      data-experiment-id="{{ experiment_id }}"
+     data-file-stem="{{ file_stem }}"
      data-authenticated="{% if authenticated %}1{% else %}0{% endif %}"
      data-preferences-url="{{ preferences_url }}"
      data-default-minimum="{{ default_minimum }}">

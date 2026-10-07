@@ -590,7 +590,8 @@
         link.href = "#";
         link.addEventListener("click", function (event) {
             event.preventDefault();
-            download(standalone(svg), gene.name + "_recurrent.svg", "image/svg+xml");
+            download(standalone(svg), gene.name + "_" + ((options && options.fileStem) || "recurrent") + ".svg",
+                     "image/svg+xml");
         });
         h.appendChild(link);
         return div;
