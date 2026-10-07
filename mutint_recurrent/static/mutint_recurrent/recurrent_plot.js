@@ -179,7 +179,8 @@
         gene.mutations.forEach(function (id) {
             var m = data.mutations[String(id)];
             if (!m) { return; }
-            var f = { m: m, span: isSpan(m), text: flagText(m, withPopulations) };
+            var f = { m: m, span: isSpan(m), text: flagText(m, withPopulations),
+                      counted: !options.counts || options.counts(id) };
             f.width = textWidth(f.text);
             f.left = clampX(m.start);
             f.right = f.span ? clampX(m.end + 1) : f.left;
@@ -276,7 +277,7 @@
             var shade = f.m.shades[gene.key] || "outline";
             var stroke = { stroke: "#333", "stroke-width": 1.5 };
             var title = flagText(f.m, true) + "\n" + f.m.type + ", " + f.m.seq_id + ":" + f.m.start
-                + (f.span ? "–" + f.m.end : "");
+                + (f.span ? "–" + f.m.end : "") + (f.counted ? "" : "\nspans several genes; not counted");
             var glyphX, textX, anchor;
             if (f.span) {
                 var clippedLeft = f.m.start < w.lo, clippedRight = f.m.end > w.hi;
@@ -548,10 +549,21 @@
         return Math.max(1, boxWidth - MARGIN.left - MARGIN.right) / Math.max(1, bases);
     }
 
+    /* The width a plot is drawn to fill: the plots container, or a floor for a box that is
+       not laid out yet. `drawPlots` takes the shared scale from the same number. */
+    function boxWidth() {
+        var plots = document.querySelector("[data-role='plots']");
+        return Math.max(400, (plots && plots.clientWidth) || 800);
+    }
+
     /* `extras` are the words the Columns menu adds to the heading: locus tag, location,
        description, whichever are shown. The count is not here: the page writes it once as a
        heading over each run of genes sharing it. With `options.pxPerBase` the drawing is as
-       wide as its window at that scale rather than as wide as the box. */
+       wide as its window at that scale rather than as wide as the box -- wider than the box
+       where labels run past the edges or the window has narrowed since, and the box then
+       scrolls sideways (`.mr-same` in recurrent.css). Nothing here sets a CSS width: the
+       SVG's own `width` attribute is the size it renders at under Same scale, and the size the
+       downloaded file keeps, which an inline style on the element would contradict. */
     function box(gene, data, extras, options) {
         var div = document.createElement("div");
         div.className = "mr-plot-box";
@@ -573,16 +585,12 @@
             div.appendChild(p);
             return div;
         }
-        var boxWidth = Math.max(400, (document.querySelector("[data-role='plots']") || div).clientWidth || 800);
-        var width = boxWidth;
+        var width = boxWidth();
         if (options && options.pxPerBase) {
             var span = windowOf(gene, data, options.flank === undefined ? (data.default_flank || 300) : options.flank);
-            width = Math.min(boxWidth, Math.max(120,
-                Math.round(MARGIN.left + MARGIN.right + (span.hi - span.lo) * options.pxPerBase)));
+            width = Math.max(120, Math.round(MARGIN.left + MARGIN.right + (span.hi - span.lo) * options.pxPerBase));
         }
         var svg = draw(gene, data, width, options);
-        var drawn = Number(svg.getAttribute("width"));
-        if (drawn < boxWidth) { svg.style.width = drawn + "px"; }
         div.appendChild(svg);
         var link = document.createElement("a");
         link.className = "mr-download";
@@ -597,6 +605,6 @@
         return div;
     }
 
-    window.mutintRecurrentPlot = { draw: draw, box: box, standalone: standalone, pxPerBase: pxPerBase,
+    window.mutintRecurrentPlot = { draw: draw, box: box, standalone: standalone, pxPerBase: pxPerBase, boxWidth: boxWidth,
                                    windowOf: windowOf, tableSvg: tableSvg, download: download };
 }());

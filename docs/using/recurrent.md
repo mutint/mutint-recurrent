@@ -20,7 +20,10 @@ the most any gene reaches. The default is 2.
 
 A deletion, amplification, conversion or inversion that crosses several genes is a hit on
 each of them only when **Count mutations spanning multiple genes** is ticked. It is off by
-default, so one event does not put a whole operon at the top of the table.
+default, so one event does not put a whole operon at the top of the table. With it off such a
+mutation is still drawn in the cells and plots of the genes it crosses, so you can see the
+deletion beside the hits that count; hovering it says it is not counted, and the line above
+the table says how many such mutations are showing.
 
 ## The table
 
@@ -61,5 +64,6 @@ beyond the gene and its promoter (300 bp unless you change it), and one flag per
 point mutation or a mobile element above the gene, a bracket below it over the extent of a
 large deletion, amplification, conversion or inversion -- carrying the same glyph, the mutation's description (the
 base and amino-acid change for a substitution) and the populations it was found in. **Fit to width** draws every gene across the page; **Same scale** draws them all at one scale,
-so a long gene is long and a short one short. **Download SVG** saves one plot as a vector
+so a long gene is long and a short one short; a plot wider than the page scrolls sideways
+rather than shrinking. **Download SVG** saves one plot as a vector
 file for a figure, at whichever scale is showing.

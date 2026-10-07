@@ -100,14 +100,19 @@
 .mr-table.color-treatment th.mr-sample { background: var(--treatment-color, #9aa1a8); }
 .mr-table.color-none th.mr-sample { background: #4b5158; }
 
-/* The plots: one box per gene, the drawing as wide as the box, under a heading per count. */
+/* The plots: one box per gene under a heading per count. Under Fit to width the drawing is
+   as wide as the box, scaled through its viewBox, so it follows the window. Under Same scale
+   (`.mr-same` on the container) it is the width its `width` attribute says, which is what
+   makes one scale shared, and a drawing wider than its box scrolls sideways in it -- each box
+   its own scrollbar, right under the plot, rather than one at the foot of the list. */
 .mr-plot-group { font-size: 22px; font-weight: bold; margin: 22px 0 12px; padding-bottom: 4px; border-bottom: 1px solid #ddd; }
 .mr-plot-group:first-child { margin-top: 4px; }
-.mr-plot-box { margin: 0 0 18px; }
+.mr-plot-box { margin: 0 0 18px; overflow-x: auto; }
 .mr-plot-box h4 { margin: 0 0 4px; }
 .mr-plot-box h4 .text-muted { font-weight: normal; font-size: 90%; }
 .mr-plot-box h4 .mr-extra { font-weight: normal; font-size: 85%; color: #6c757d; margin-left: 10px; }
 .mr-plot { display: block; width: 100%; height: auto; font-family: Helvetica, Arial, sans-serif; }
+.mr-same .mr-plot { width: auto; }
 .mr-plot-box .mr-download { font-size: 85%; margin-left: 8px; }
 
 /* A flag's words sit on a white box drawn by the script; the halo covers the box's edge. */

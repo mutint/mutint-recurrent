@@ -124,7 +124,8 @@ class MultiGeneTestCase(fx.RecurrentFixture):
         by_start = {m["start"]: m for m in data["mutations"].values()}
         self.assertTrue(by_start[350]["spans_genes"])
         self.assertFalse(by_start[110]["spans_genes"])
-        # Both are in the payload; the page drops the spanning one unless asked.
+        # Both are in the payload; the page draws both and leaves the spanning one out of
+        # the count unless asked.
         self.assertEqual({"geneA", "geneB"}, set(by_name(data)))
 
 

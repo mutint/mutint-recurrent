@@ -2,10 +2,12 @@
  *
  * The derivation arrives whole as JSON (`#recurrent-data`); this script decides which
  * mutations count -- a mutation spanning several genes only when the box is ticked -- recounts
- * each gene's populations from its cells, filters by the minimum, draws the rows, shows and
- * hides the gene columns, and hands the plots view to recurrent_plot.js. The counting is
- * repeated here rather than taken from the server so the checkbox costs no request; the
- * server's counts are what the page would show with it ticked. Four choices are remembered
+ * each gene's populations from the ones that do, filters by the minimum, draws the rows, shows
+ * and hides the gene columns, and hands the plots view to recurrent_plot.js. A mutation that
+ * does not count is still drawn, in the cells and on the plots of the genes that make the
+ * cut, told apart only by its hover text: the reader sees the deletion that took the gene out
+ * as well as the hits that put it in the table. The counting is repeated here rather than taken from the server so the
+ * checkbox costs no request; the server's counts are what the page would show with it ticked. Four choices are remembered
  * through mutintPreferences: `recurrent.columns` ({hidden, shown}, read the way the matrix
  * reads its own), `recurrent.view`, `recurrent.span_deletions` and `recurrent.min.<experiment>`.
  *
@@ -97,9 +99,13 @@
             if (view === "plots") { drawPlots(shownGenes()); }
         });
 
-        /* Fit to width draws every gene across the box; Same scale draws them all at one
-           number of pixels per base -- the widest window fills the box and the rest are
-           narrower -- so the drawings, and the SVGs downloaded from them, compare lengths. */
+        /* Fit to width draws every gene across the box, and the drawings follow the window
+           through their viewBox. Same scale draws them all at one number of pixels per base --
+           the widest window fills the box as it is when drawn, and the rest are narrower -- so
+           the drawings, and the SVGs downloaded from them, compare lengths. At that scale a
+           drawing is its own pixel width, never scaled to the window: one wider than its box
+           scrolls in it, and nothing redraws on resize, so narrowing the window afterwards
+           gives a scrollbar rather than a different scale. */
         var scaleMode = prefs.get("recurrent.scale", "fit") === "same" ? "same" : "fit";
         Array.prototype.forEach.call(root.querySelectorAll("[data-scale]"), function (button) {
             button.addEventListener("click", function () {
@@ -148,7 +154,8 @@
                         var m = data.mutations[String(id)];
                         var shade = m.shades[gene.key] || "outline";
                         return m.label + (m.annotation ? " " + m.annotation : "") + " ["
-                            + (GLYPH_WORDS[m.glyph] || m.type) + "; " + SHADE_WORDS_SHORT[shade] + "]";
+                            + (GLYPH_WORDS[m.glyph] || m.type) + "; " + SHADE_WORDS_SHORT[shade]
+                            + (counts(id) ? "" : "; not counted") + "]";
                     }).join("; "));
                 });
                 lines.push(row.map(csvCell).join(","));
@@ -223,28 +230,26 @@
             var m = data.mutations[String(id)];
             return !!m && (spanBox.checked || !m.spans_genes);
         }
+        var UNCOUNTED_WORDS = "spans several genes; not counted";
 
-        /* Each gene's cells with the excluded mutations dropped, its populations recounted
-           from what is left, and the genes re-sorted: the shape the server sent, decided
-           again under the checkbox. */
+        /* Each gene's populations recounted from the mutations that count, and the genes
+           re-sorted: the shape the server sent, decided again under the checkbox. The cells
+           keep every mutation, counted or not -- a gene that is in the table on the strength
+           of its own hits still shows the deletion that crosses it -- and a gene none of
+           whose mutations count is left out, having no population to its name. */
         var genes = [];
         var maxCount = 1;
         function recount() {
             genes = [];
             data.genes.forEach(function (gene) {
-                var cells = {}, populations = {};
+                var populations = {};
                 Object.keys(gene.cells).forEach(function (sampleId) {
-                    var ids = gene.cells[sampleId].filter(counts);
-                    if (ids.length) {
-                        cells[sampleId] = ids;
-                        populations[populationOf[sampleId]] = true;
-                    }
+                    if (gene.cells[sampleId].some(counts)) { populations[populationOf[sampleId]] = true; }
                 });
                 var count = Object.keys(populations).length;
                 if (!count) { return; }
                 genes.push(Object.assign({}, gene, {
-                    cells: cells, count: count, populations: Object.keys(populations).sort(),
-                    mutations: gene.mutations.filter(counts)
+                    count: count, populations: Object.keys(populations).sort()
                 }));
             });
             genes.sort(function (a, b) {
@@ -338,6 +343,7 @@
                 var shade = m.shades[gene.key] || "outline";
                 var title = m.label + (m.annotation ? "  " + m.annotation : "")
                     + "\n" + m.type + ", " + SHADE_WORDS[shade]
+                    + (counts(id) ? "" : "\n" + UNCOUNTED_WORDS)
                     + "\n" + sample.label + " (" + sample.population + ")";
                 var glyph = glyphSvg(m.glyph, shade, title);
                 if (m.url) {
@@ -389,6 +395,7 @@
            it once for the group rather than on every plot. */
         function drawPlots(genes) {
             plots.textContent = "";
+            plots.classList.toggle("mr-same", scaleMode === "same");
             var pxPerBase = null;
             if (scaleMode === "same") {
                 var widest = genes.reduce(function (most, gene) {
@@ -396,7 +403,7 @@
                     var span = window.mutintRecurrentPlot.windowOf(gene, data, flank);
                     return Math.max(most, span.hi - span.lo);
                 }, 0);
-                if (widest) { pxPerBase = window.mutintRecurrentPlot.pxPerBase(plots.clientWidth, widest); }
+                if (widest) { pxPerBase = window.mutintRecurrentPlot.pxPerBase(window.mutintRecurrentPlot.boxWidth(), widest); }
             }
             var last = null;
             genes.forEach(function (gene) {
@@ -410,15 +417,28 @@
                 plots.appendChild(window.mutintRecurrentPlot.box(gene, data, extras(gene),
                                                                  { colorOf: colorOf, pxPerBase: pxPerBase, flank: flank,
                                                                    populations: colorSelect.value !== "hidden",
-                                                                   fileStem: fileStem }));
+                                                                   fileStem: fileStem, counts: counts }));
             });
             empty.hidden = genes.length > 0;
         }
 
+        /* The spanning mutations drawn on the shown genes while the box is off, each once
+           however many genes it crosses, so the line can say how many are there uncounted. */
+        function uncountedShown(genes) {
+            var seen = {};
+            genes.forEach(function (gene) {
+                gene.mutations.forEach(function (id) { if (!counts(id)) { seen[id] = true; } });
+            });
+            return Object.keys(seen).length;
+        }
+
         function refresh() {
             var genes = shownGenes();
+            var uncounted = uncountedShown(genes);
             countLine.textContent = genes.length + " gene" + (genes.length === 1 ? "" : "s")
-                + " mutated in ≥ " + minimum + " population" + (minimum === 1 ? "" : "s");
+                + " mutated in ≥ " + minimum + " population" + (minimum === 1 ? "" : "s")
+                + (uncounted ? ". " + uncounted + " mutation" + (uncounted === 1 ? "" : "s")
+                   + " spanning multiple genes " + (uncounted === 1 ? "is" : "are") + " shown but not counted." : "");
             if (view === "plots") { drawPlots(genes); } else { drawTable(genes); }
         }
 

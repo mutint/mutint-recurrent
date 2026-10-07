@@ -33,8 +33,16 @@ a whole operon at the top of the table on the strength of one event. The **Count
 spanning multiple genes** box, off by default and remembered as `recurrent.span_deletions`,
 decides; the server marks such a mutation `spans_genes` (a DEL, AMP, CON, INT or INV touching
 more than one gene, `MULTI_GENE_TYPES`) and `recurrent.js` recounts every gene's populations
-from its cells with those mutations dropped, so the box costs no request. The server's own
-counts are what the page shows with the box ticked.
+from the mutations that count, so the box costs no request. The server's own counts are what
+the page shows with the box ticked. **An uncounted mutation is still drawn**, exactly as a
+counted one is, in the cells and on the plots of every gene that is in the table on the
+strength of its counted hits; *spans several genes; not counted* in its hover text and after
+its words in the CSV marks it, and the count line under the controls says how many such
+mutations are showing -- *3 mutations spanning multiple genes are shown but not counted*,
+each counted once however many genes it crosses -- and says nothing when there are none. A gene none of whose mutations count is
+not listed. The reader sees the deletion that took a gene out beside the hits that put it in
+the table, instead of a cell that looks untouched. (A fade on the uncounted ones was tried and
+asked off: it read as a fourth shade.)
 
 **The reader's frequency filter is deliberately not applied.** Every present call counts. The
 ancestor *is* subtracted, through `calls_for_samples`, as everywhere else. The page renders no
@@ -154,8 +162,15 @@ or draws them black, colored by the population's own palette index (the table's 
 colors), or by its treatment (the treatment its first sample carries), remembered as
 `recurrent.color`; a hidden name is still in the flag's hover title.
 **Plot scale**, Fit to width / Same scale (`recurrent.scale`), chooses whether every gene fills the box or
-all of them share one pixels-per-base, the widest window filling the box and the rest drawn
-narrower, so the plots and the SVGs downloaded from them compare gene lengths.
+all of them share one pixels-per-base, the widest window filling the box as it is when drawn
+and the rest drawn narrower, so the plots and the SVGs downloaded from them compare gene
+lengths. Under Fit the SVG is `width: 100%` and follows the window through its viewBox; under
+Same scale (`.mr-same` on the container) it renders at its own `width` attribute, and one wider
+than its box -- labels past the edges, or the window narrowed since -- scrolls sideways in it
+rather than shrinking, which is what keeps the scale shared and the page matching the file.
+Nothing redraws on resize. (The `100%` rule used to apply at both scales, so any plot wider
+than the box was scaled back to fit, off the shared scale and following the window while the
+narrower ones held still.)
 **Export table** (CSV or SVG, table view only): the CSV is one row per shown gene, the shown
 columns, then a cell per sample naming each mutation with its glyph's words and its shade; the
 SVG is the table drawn (`tableSvg`) with the legends beneath. **Every SVG file starts with an
@@ -189,7 +204,7 @@ DJANGO_SETTINGS_MODULE=recurrent_settings PYTHONPATH=/tmp:../mutint-recurrent ./
 real annotator produces every case: a nonsense SNP, a synonymous SNP in the first 80% and one
 in the last 20%, a frameshift, a promoter SNP upstream of a minus-strand gene, a deletion
 clipping two genes. Samples are breseq folders through core's importer, so the annotation
-under test is the one a real import gets. 30 tests.
+under test is the one a real import gets. 35 tests.
 
 The plots are not under test beyond the JSON they are drawn from; they were checked by
 rendering the specificity example (31 clones, known answer *nadR*, *hslU*, *mrdA*, *gltB*)
