@@ -98,7 +98,7 @@ class ShadeTestCase(fx.RecurrentFixture):
 
     def test_a_deletion_clipping_two_genes_counts_for_both(self):
         m = self.mutation(350, "DEL")
-        self.assertEqual(glyphs.TRAPEZOID_DOWN, m["glyph"])
+        self.assertEqual(glyphs.TRAPEZOID, m["glyph"])
         self.assertEqual({"ECK_0001", "ECK_0002"}, set(m["shades"]))
         # It removes the last 51 bp of geneA and the 3' 49 bp of geneB: the tail of each.
         self.assertEqual("gray", m["shades"]["ECK_0001"])

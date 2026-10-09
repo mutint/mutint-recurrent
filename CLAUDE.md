@@ -83,7 +83,8 @@ shade rule -- what a mutation does to the gene -- is still decided here, per gen
   nonsense tombstone, intergenic inverted diamond, **noncoding or pseudogene upright diamond**
   (the request named no glyph for these; the diamond keeps them beside intergenic).
 - DEL and INS by `mutation_category`'s 50 bp cutoff: triangle / inverted triangle small,
-  inverted trapezoid / trapezoid large. **AMP follows INS**, so a small AMP (`small_indel`) is
+  trapezoid / inverted trapezoid large -- a deletion narrows upward at either size and an
+  insertion widens upward. **AMP follows INS**, so a small AMP (`small_indel`) is
   the small-insertion glyph.
 - MOB bowtie; CON **and INT** parallelogram; **INV barbell** (two triangles pointing outward from a bar) -- the last two are this plugin's
   choices, the request having named neither.

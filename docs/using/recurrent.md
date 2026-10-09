@@ -40,8 +40,8 @@ its population. A cell holds one glyph per mutation that sample carries in that 
 | triangle | small deletion (up to 50 bp) |
 | inverted triangle | small insertion (up to 50 bp) |
 | bowtie | mobile element insertion |
-| inverted trapezoid | large deletion |
-| trapezoid | large insertion or amplification |
+| trapezoid | large deletion |
+| inverted trapezoid | large insertion or amplification |
 | parallelogram | gene conversion or integration |
 | barbell (two triangles pointing outward from a bar) | inversion |
 
